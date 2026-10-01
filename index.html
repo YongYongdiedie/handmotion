@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer"><title>손동작 시간축 실험실</title>
+<link rel="stylesheet" href="style.css?v=2">
+</head>
+<body><main>
+<header><span class="eyebrow">SCIENCE LAB · 교사용 프로토타입</span><h1>손동작 시간축 실험실</h1></header>
+<section class="camera card" id="workspace" aria-label="카메라와 동작 실험">
+<div class="toolbar"><button id="start">카메라 켜기</button><button id="stop" class="secondary" disabled>카메라 끄기</button></div>
+<div class="view"><video id="video" autoplay muted playsinline></video><canvas id="overlay"></canvas><div id="cue">카메라를 켜 주세요</div><div id="cameraPrediction" hidden></div></div>
+<div class="tabs" role="tablist" aria-label="실험 모드"><button id="collectTab" role="tab" aria-selected="true" aria-controls="collectPanel">동작 수집</button><button id="predictTab" role="tab" aria-selected="false" aria-controls="predictPanel" tabindex="-1">실시간 예측</button></div>
+<div id="collectPanel" role="tabpanel" aria-labelledby="collectTab">
+<div class="classes"><div><label for="name0">동작 1 이름</label><input id="name0" maxlength="20" value="좌→우" autocomplete="off"><p><strong id="count0">0</strong> / <span id="goal0">10</span>회</p><button id="record0" disabled>1회 기록</button></div><div><label for="name1">동작 2 이름</label><input id="name1" maxlength="20" value="위→아래" autocomplete="off"><p><strong id="count1">0</strong> / <span id="goal1">10</span>회</p><button id="record1" disabled>1회 기록</button></div></div>
+<div class="goal-row"><label for="target">각 동작 목표</label><input id="target" type="number" min="1" max="100" step="1" value="10" inputmode="numeric" aria-describedby="targetHelp"><span>회</span><div class="presets"><button id="goal5" class="secondary">5</button><button id="goal10" class="secondary">10</button><button id="goal20" class="secondary">20</button></div></div>
+<p id="targetHelp" class="note">1~100회 · 목표를 바꿔도 수집한 데이터는 유지됩니다.</p>
+<details><summary>수집 방법과 이름 변경 안내</summary><p>3초 준비 후 1.5초 동안 한 손을 움직이세요. 기본 방향은 화면 기준입니다. 이름만 바꾸면 데이터는 유지됩니다. 실제 동작을 바꿀 때는 초기화한 뒤 다시 수집하세요. 이 모델은 손이 이동하는 동작용이며, 손목이 거의 움직이지 않는 동작은 저장되지 않을 수 있습니다.</p></details>
+<button id="reset" class="text-button" disabled>데이터와 모델 초기화</button>
+</div>
+<div id="predictPanel" role="tabpanel" aria-labelledby="predictTab" hidden>
+<button id="predict" disabled>실시간 예측 시작</button><p id="prediction" role="status">학습 후 새로운 동작을 보여 주세요.</p>
+<div class="prob"><label><span id="label0">좌→우</span><output id="p0">—</output></label><meter id="m0" min="0" max="1" value="0"></meter></div><div class="prob"><label><span id="label1">위→아래</span><output id="p1">—</output></label><meter id="m1" min="0" max="1" value="0"></meter></div>
+<p id="modelInfo" class="note">아직 학습한 모델이 없습니다.</p>
+<details><summary>예측 결과 읽는 방법</summary><p>최근 1.5초를 반복 분석합니다. 확률은 두 클래스 사이의 상대 점수입니다. 다른 동작도 둘 중 하나로 분류될 수 있습니다. 수집 횟수가 늘어도 확률이나 정확도가 반드시 올라가지는 않습니다. 매 단계 새 동작을 각각 10번 시험해 맞힌 횟수를 비교하세요.</p></details>
+</div>
+<p id="status" role="status" aria-live="polite">전면 카메라 · 한 손만 사용하세요.</p>
+</section>
+<section class="card"><h2>모델 학습</h2><p id="trainHelp">각 동작을 목표 횟수 이상 모으면 학습할 수 있습니다.</p><button id="train" disabled>모델 학습하기</button><progress id="progress" max="60" value="0" aria-label="학습 진행률"></progress><p id="training" role="status">학습 데이터 대기 중</p><p id="trainedCounts" class="note">아직 학습한 모델이 없습니다.</p><p class="note">추가 수집 후 재학습하면 모은 데이터 전체로 새 모델을 만듭니다. 학습 중에는 손 추적을 잠시 쉽니다.</p></section>
+<footer>영상과 좌표는 업로드하지 않습니다. 데이터와 모델은 이 탭의 메모리에만 남고 새로고침하면 사라집니다. 외부 CDN에서 라이브러리와 손 검출 모델을 내려받습니다.</footer>
+</main><script type="module" src="app.js?v=2"></script></body></html>
