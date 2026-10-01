@@ -149,7 +149,7 @@ window.addEventListener('pagehide', stopCamera);
 function abortCapture(message) { capture = null; ring = []; $('cue').textContent = '다시 기록해 주세요'; say(message); controls(); }
 for (let c=0;c<2;c++) $('record'+c).onclick = () => {
   predicting = false; clearPrediction(); ring = [];
-  capture = {label:c,start:performance.now()+3000,frames:[],attempts:0,missing:0}; controls(); say('손을 시작 위치에 놓으세요.');
+  capture = {label:c,start:performance.now()+3000,frames:[],attempts:0,missing:0}; controls(); say('정지 표현은 자세를 유지하고, 움직이는 표현은 기록 시간 안에 수행하세요.');
 };
 // Interpolate by timestamps, rather than treating variable phone FPS as fixed FPS.
 function resample(frames) {
@@ -161,12 +161,21 @@ function resample(frames) {
     return a.v.map((v,k) => v+(b.v[k]-v)*u);
   });
 }
-// 20 × 63 displacement values, ordered in time. Subtract the FIRST frame,
-// not each frame's wrist: per-frame centering would erase hand translation.
-function features(sequence) { return sequence.flatMap(frame => frame.map((v,k) => (v-sequence[0][k])*3)); }
-function moving(sequence) {
-  const xs=sequence.map(f=>f[0]), ys=sequence.map(f=>f[1]);
-  return Math.hypot(Math.max(...xs)-Math.min(...xs),Math.max(...ys)-Math.min(...ys)) >= 0.12;
+// Each time step contains 63 wrist-relative shape coordinates and 2 trajectory values.
+// Palm-size normalization reduces distance-to-camera effects; orientation is preserved.
+// Keep wrist travel separately so centering the shape does not erase movement.
+const FEATURES_PER_STEP = 65;
+function features(sequence) {
+  const origin = sequence[0];
+  return sequence.flatMap(frame => {
+    const palm = [5,9,17].map(i => Math.hypot(
+      frame[i*3]-frame[0], frame[i*3+1]-frame[1], frame[i*3+2]-frame[2]
+    ));
+    const scale = Math.max(0.025, palm.reduce((a,b)=>a+b,0)/palm.length);
+    const shape = frame.map((v,k) => (v-frame[k%3])/scale*0.5);
+    // MediaPipe z is wrist-relative depth, not global camera depth: use x/y travel only.
+    return [...shape, (frame[0]-origin[0])*3, (frame[1]-origin[1])*3];
+  });
 }
 function draw(points) {
   if(canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {canvas.width=video.videoWidth;canvas.height=video.videoHeight;}
@@ -201,14 +210,13 @@ function processFrame(points, now) {
       if(frames.length<12) return abortCapture('실제 관찰한 좌표가 부족합니다. 다른 앱을 닫고 다시 시도하세요.');
       if(capture.missing/capture.attempts > MAX_MISSING_RATIO) return abortCapture('손을 놓친 비율이 20%를 넘어 저장하지 않았습니다. 밝은 곳에서 다시 기록하세요.');
       const sequence=resample(frames);
-      if(!moving(sequence)) return abortCapture('움직임이 너무 작습니다. 화면 너비나 높이의 1/4 정도 움직여 주세요.');
       const label=capture.label, repaired=capture.missing>0; data[label].push(sequence); capture=null;
       $('training').textContent='데이터를 추가했습니다. 목표 횟수를 모은 뒤 재학습하세요.';
       $('cue').textContent='저장 완료'; say(`${names[label]} ${data[label].length}회 저장${repaired ? ' (짧은 누락 보간)' : ''}. 시작 위치로 돌아간 뒤 다시 눌러 주세요.`); controls();
     }
     return;
   }
-  $('cue').textContent=predicting?'새 동작을 보여 주세요':'손 인식 중';
+  $('cue').textContent=predicting?'한 표현을 1.5초 동안 보여 주세요':'손 인식 중';
   if(!predicting) return;
   if(ring.length && now-ring.at(-1).t>MAX_GAP) {ring=[];clearPrediction('추적 대기 중');}
   ring.push(frame);
@@ -218,7 +226,6 @@ function processFrame(points, now) {
   const recent = trackingSamples;
   if (recent.length && recent.filter(s=>!s.found).length/recent.length > MAX_MISSING_RATIO) return clearPrediction('손 검출이 불안정합니다. 밝은 곳에서 다시 보여 주세요.');
   const sequence=resample(ring);
-  if(!moving(sequence)) return clearPrediction('움직임 대기 중');
   const probs=tf.tidy(()=>Array.from(model.predict(tf.tensor2d([features(sequence)])).dataSync()));
   for(let c=0;c<2;c++) {$('p'+c).textContent=`${(probs[c]*100).toFixed(1)}%`;$('m'+c).value=probs[c];}
   const winner = probs[0]>probs[1] ? 0 : 1;
@@ -252,7 +259,7 @@ $('train').onclick=async()=>{
     tf.util.shuffle(rows);
     x=tf.tensor2d(rows.map(r=>r.x)); y=tf.tensor2d(rows.map(r=>r.y===0?[1,0]:[0,1]));
     candidate=tf.sequential();
-    candidate.add(tf.layers.dense({inputShape:[STEPS*63],units:12,activation:'relu',kernelRegularizer:tf.regularizers.l2({l2:0.001})}));
+    candidate.add(tf.layers.dense({inputShape:[STEPS*FEATURES_PER_STEP],units:12,activation:'relu',kernelRegularizer:tf.regularizers.l2({l2:0.001})}));
     candidate.add(tf.layers.dense({units:2,activation:'softmax'}));
     candidate.compile({optimizer:tf.train.adam(0.003),loss:'categoricalCrossentropy',metrics:['accuracy']});
     await candidate.fit(x,y,{epochs:60,batchSize:8,shuffle:true,yieldEvery:'batch',callbacks:{onEpochEnd:async(epoch,logs)=>{
@@ -266,7 +273,7 @@ $('train').onclick=async()=>{
   } catch(e) {$('training').textContent=`학습 실패: ${e.message}`;}
   finally {x?.dispose();y?.dispose();candidate?.dispose();training=false;ring=[];resetTrackingStats();controls();}
 };
-$('predict').onclick=()=>{predicting=!predicting;ring=[];clearPrediction(predicting?'1.5초 동안 동작을 보여 주세요.':'예측 중지');controls();};
+$('predict').onclick=()=>{predicting=!predicting;ring=[];clearPrediction(predicting?'1.5초 동안 손 모양을 유지하거나 동작을 보여 주세요.':'예측 중지');controls();};
 $('reset').onclick=()=>{data=[[],[]];model?.dispose();model=null;trainedCounts=null;predicting=false;ring=[];$('progress').value=0;$('training').textContent='학습 데이터 대기 중';clearPrediction();say('데이터와 모델을 지웠습니다.');controls();};
 controls();
 
