@@ -15,7 +15,7 @@
 <div class="classes"><div><label for="name0">동작 1 이름</label><input id="name0" maxlength="20" value="좌→우" autocomplete="off"><p><strong id="count0">0</strong> / <span id="goal0">10</span>회</p><button id="record0" disabled>1회 기록</button></div><div><label for="name1">동작 2 이름</label><input id="name1" maxlength="20" value="위→아래" autocomplete="off"><p><strong id="count1">0</strong> / <span id="goal1">10</span>회</p><button id="record1" disabled>1회 기록</button></div></div>
 <div class="goal-row"><label for="target">각 동작 목표</label><input id="target" type="number" min="1" max="100" step="1" value="10" inputmode="numeric" aria-describedby="targetHelp"><span>회</span><div class="presets"><button id="goal5" class="secondary">5</button><button id="goal10" class="secondary">10</button><button id="goal20" class="secondary">20</button></div></div>
 <p id="targetHelp" class="note">1~100회 · 목표를 바꿔도 수집한 데이터는 유지됩니다.</p>
-<details><summary>수집 방법과 이름 변경 안내</summary><p>3초 준비 후 1.5초 동안 한 손을 움직이세요. 기본 방향은 화면 기준입니다. 이름만 바꾸면 데이터는 유지됩니다. 실제 동작을 바꿀 때는 초기화한 뒤 다시 수집하세요. 이 모델은 손이 이동하는 동작용이며, 손목이 거의 움직이지 않는 동작은 저장되지 않을 수 있습니다.</p></details>
+<details><summary>수집 방법과 이름 변경 안내</summary><p>3초 준비 후 1.5초 동안 한 손을 움직이세요. 최대 약 30회/초로 분석하며 실제 FPS와 최근 1초 손 검출 비율을 표시합니다. 0.15초 이내의 짧은 누락만 앞뒤 좌표로 보간합니다. 누락 비율이 20%를 넘거나 긴 끊김이 있으면 저장하지 않습니다. 빠른 동작은 밝은 곳에서 시험하세요. 기본 방향은 화면 기준입니다. 이름만 바꾸면 데이터는 유지됩니다. 실제 동작을 바꿀 때는 초기화한 뒤 다시 수집하세요. 이 모델은 손이 이동하는 동작용이며, 손목이 거의 움직이지 않는 동작은 저장되지 않을 수 있습니다.</p></details>
 <button id="reset" class="text-button" disabled>데이터와 모델 초기화</button>
 </div>
 <div id="predictPanel" role="tabpanel" aria-labelledby="predictTab" hidden>
@@ -28,4 +28,4 @@
 </section>
 <section class="card"><h2>모델 학습</h2><p id="trainHelp">각 동작을 목표 횟수 이상 모으면 학습할 수 있습니다.</p><button id="train" disabled>모델 학습하기</button><progress id="progress" max="60" value="0" aria-label="학습 진행률"></progress><p id="training" role="status">학습 데이터 대기 중</p><p id="trainedCounts" class="note">아직 학습한 모델이 없습니다.</p><p class="note">추가 수집 후 재학습하면 모은 데이터 전체로 새 모델을 만듭니다. 학습 중에는 손 추적을 잠시 쉽니다.</p></section>
 <footer>영상과 좌표는 업로드하지 않습니다. 데이터와 모델은 이 탭의 메모리에만 남고 새로고침하면 사라집니다. 외부 CDN에서 라이브러리와 손 검출 모델을 내려받습니다.</footer>
-</main><script type="module" src="app.js?v=2"></script></body></html>
+</main><script type="module" src="app.js?v=3"></script></body></html>
