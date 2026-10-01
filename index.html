@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>손동작 시간축 실험실</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<header><span class="eyebrow">SCIENCE LAB · 교사용 프로토타입</span><h1>손의 움직임을<br>학습하는 AI</h1><p>두 동작을 모으고, 학습하고, 새 동작으로 확인하세요.</p></header>
+<section class="camera card">
+<div class="view"><video id="video" autoplay muted playsinline></video><canvas id="overlay"></canvas><div id="cue">카메라를 켜 주세요</div></div>
+<div class="toolbar"><button id="start">카메라 켜기</button><button id="stop" class="secondary" disabled>카메라 끄기</button></div>
+<p id="status" role="status" aria-live="polite">전면 카메라 · 화면 기준 좌→우 · 한 손만 사용</p>
+</section>
+<section class="card"><h2><span>01</span> 동작 수집</h2><p>버튼을 누르면 3초 준비 후 1.5초 동안 기록합니다. 손을 편 채 화면 안에서 한 방향으로 움직이세요.</p>
+<div class="classes"><div><h3>좌 → 우</h3><p><strong id="count0">0</strong> / 10회 이상</p><button id="record0" disabled>좌→우 1회 기록</button></div><div><h3>위 → 아래</h3><p><strong id="count1">0</strong> / 10회 이상</p><button id="record1" disabled>위→아래 1회 기록</button></div></div>
+<button id="reset" class="text-button" disabled>데이터와 모델 초기화</button></section>
+<section class="card"><h2><span>02</span> 모델 학습</h2><p>각 동작 10회 이상 모으면 학습할 수 있습니다. 학습 중에는 손 추적을 잠시 쉽니다.</p><button id="train" disabled>모델 학습하기</button><progress id="progress" max="60" value="0" aria-label="학습 진행률"></progress><p id="training" role="status">학습 데이터 대기 중</p></section>
+<section class="card"><h2><span>03</span> 실시간 예측</h2><button id="predict" disabled>실시간 예측 시작</button><p id="prediction" role="status">학습 후 새로운 동작을 보여 주세요.</p><div class="prob"><label>좌 → 우 <output id="p0">—</output></label><meter id="m0" min="0" max="1" value="0"></meter></div><div class="prob"><label>위 → 아래 <output id="p1">—</output></label><meter id="m1" min="0" max="1" value="0"></meter></div><p class="note">최근 1.5초를 반복 분석합니다. 확률은 두 클래스 사이의 상대 점수입니다. 반대 방향·다른 동작도 둘 중 하나로 분류될 수 있습니다.</p></section>
+<footer>영상과 손 좌표는 업로드하지 않습니다. 데이터와 학습 모델은 이 탭의 메모리에만 남으며 새로고침하면 사라집니다. 최초 실행 시 외부 CDN에서 라이브러리와 손 검출 모델을 내려받습니다.</footer>
+</main>
+<script type="module" src="app.js"></script>
+</body></html>
